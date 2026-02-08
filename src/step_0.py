@@ -12,18 +12,23 @@ class MazeGenerator:
     '''Generates maze grid worlds 50 by 50s'''
 
     def __init__(self, rows: int = 101, cols: int = 101, prob: float = 0.3):
+        #init ground rules on Maze 
         self.rows = rows 
         self.cols = cols 
         self.prob = prob
+        #grid will show blocks 
         self.grid = None 
+        #used in dfs for making maze to check if cell is visited
         self.visited = None 
     
     def is_valid(self, row: int, col: int) -> bool: 
+        '''checks if cell is in range of maze'''
         if -1 < row < self.rows and -1 < col < self.cols:
             return True
         return False
     
     def get_neighbors(self, cell: Cell) -> List[Cell]:
+        '''gets all possible neighbors'''
         neighbors = []
         possible_neighbors = [
             (cell.row - 1, cell.col),
@@ -38,6 +43,7 @@ class MazeGenerator:
         return neighbors
     
     def get_unvisited_neighbors(self, cell: Cell) -> List[Cell]: 
+        '''gets all unvisited neighbors'''
         unvisited_neighbors = []
         neighbors = self.get_neighbors(cell)
         for neighbor in neighbors: 
@@ -50,7 +56,7 @@ class MazeGenerator:
         self.grid = np.zeros((self.rows, self.cols), dtype = np.int8)
         self.visited = np.zeros((self.rows, self.cols), dtype = bool)
 
-        #start stuff
+        #inital cell when making map
         row_pos = random.randint(0, self.rows -1)
         col_pos = random.randint(0, self.cols -1)
         cell = Cell(row_pos, col_pos)
@@ -62,7 +68,7 @@ class MazeGenerator:
 
         #going through the maze 
         while not np.all(self.visited):
-            #if stack is empty 
+            #if stack is empty we will add a random unvisited to stack and mark it as not blocked 
             if not stack: 
                 unvisited_positions = np.argwhere(self.visited == False)
                 random_idx = random.randint(0, len(unvisited_positions)-1)
@@ -70,6 +76,12 @@ class MazeGenerator:
                 self.visited[row_pos, col_pos] = True
                 stack.append(Cell(row_pos, col_pos))
             else: 
+                '''
+                look at top of stack and check unvisited neighbors 
+                if unvisited neighbors exists, pick a random one, decide if blocked
+                if no unvisted neighbors pop from stack 
+                '''
+
                 cell = stack[-1]
                 unvisited_neighbors = self.get_unvisited_neighbors(cell)
                 if unvisited_neighbors: 
