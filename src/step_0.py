@@ -98,20 +98,103 @@ class MazeGenerator:
     
 
 
+
 if __name__ == "__main__":
-    print("Testing Step 0: Maze Generation")
-    print("=" * 50)
-
+    import os
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    
+    print("=" * 60)
+    print("CS 440 Assignment 1 - Step 0: Environment Generation")
+    print("=" * 60)
+    
     # Test with a small 10x10 maze first
-    print("\nGenerating 10x10 test maze...")
+    print("\n[TEST] Generating 10x10 test maze...")
     generator = MazeGenerator(rows=10, cols=10, prob=0.3)
-    maze = generator.generate()
-
-    print("Generated maze:")
-    print(maze)
-
-    print("\nMaze stats:")
-    print(f"  Total cells: {maze.size}")
-    print(f"  Blocked cells: {np.sum(maze == 1)}")
-    print(f"  Unblocked cells: {np.sum(maze == 0)}")
-    print(f"  Blocked percentage: {np.sum(maze == 1) / maze.size * 100:.1f}%")
+    test_maze = generator.generate()
+    
+    print("Generated test maze:")
+    print(test_maze)
+    print(f"\nTest maze stats:")
+    print(f"  Total cells: {test_maze.size}")
+    print(f"  Blocked cells: {np.sum(test_maze == 1)}")
+    print(f"  Unblocked cells: {np.sum(test_maze == 0)}")
+    print(f"  Blocked percentage: {np.sum(test_maze == 1) / test_maze.size * 100:.1f}%")
+    
+    # Ask user if they want to generate all 50 mazes
+    print("\n" + "=" * 60)
+    response = input("Generate all 50 mazes (101x101)? (y/n): ").strip().lower()
+    
+    if response == 'y':
+        # Create output directory
+        output_dir = "environments"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        print(f"\nGenerating 50 mazes of size 101x101...")
+        print(f"Block probability: 30%")
+        print("=" * 60)
+        
+        generator = MazeGenerator(rows=101, cols=101, prob=0.3)
+        stats = []
+        
+        for i in range(50):
+            print(f"Generating maze {i+1}/50...", end=" ")
+            
+            # Generate the maze
+            maze = generator.generate()
+            
+            # Calculate stats
+            blocked_pct = (np.sum(maze == 1) / maze.size) * 100
+            stats.append(blocked_pct)
+            
+            # Save it
+            filename = os.path.join(output_dir, f"maze_{i:02d}.npy")
+            np.save(filename, maze)
+            print(f"✓ Saved ({blocked_pct:.1f}% blocked)")
+        
+        # Print summary statistics
+        print("\n" + "=" * 60)
+        print("Generation Complete!")
+        print("=" * 60)
+        print(f"\nSummary Statistics:")
+        print(f"  Average blocked: {np.mean(stats):.2f}%")
+        print(f"  Min blocked: {np.min(stats):.2f}%")
+        print(f"  Max blocked: {np.max(stats):.2f}%")
+        print(f"  Std dev: {np.std(stats):.2f}%")
+        print(f"\nAll 50 mazes saved to {output_dir}/")
+        
+        # Visualize a few sample mazes
+        print("\n" + "=" * 60)
+        viz_response = input("Visualize sample mazes? (y/n): ").strip().lower()
+        
+        if viz_response == 'y':
+            # Color map: white for unblocked, black for blocked
+            cmap = ListedColormap(['white', 'black'])
+            
+            # Visualize first 3 mazes
+            for i in range(min(3, 50)):
+                filename = os.path.join(output_dir, f"maze_{i:02d}.npy")
+                maze = np.load(filename)
+                
+                fig, ax = plt.subplots(figsize=(10, 10))
+                ax.imshow(maze, cmap=cmap, interpolation='nearest')
+                ax.set_title(f"Maze {i} ({maze.shape[0]}x{maze.shape[1]})", 
+                           fontsize=16, fontweight='bold')
+                ax.set_xlabel('Column')
+                ax.set_ylabel('Row')
+                ax.grid(True, alpha=0.3, linewidth=0.5)
+                plt.tight_layout()
+                
+                # Save visualization
+                viz_dir = "../results"
+                os.makedirs(viz_dir, exist_ok=True)
+                viz_filename = os.path.join(viz_dir, f"maze_{i:02d}_visualization.png")
+                plt.savefig(viz_filename, dpi=150, bbox_inches='tight')
+                print(f"Saved visualization: {viz_filename}")
+                plt.close()
+            
+            print(f"\nVisualizations saved to {viz_dir}/")
+    
+    print("\n" + "=" * 60)
+    print("Step 0 Complete!")
+    print("=" * 60)
