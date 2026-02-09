@@ -2,6 +2,7 @@ import numpy as np
 import random
 from GridWorld import GridWorld
 from a_star import RepeatedForwardAStar
+from a_star import RepeatedBackwardAStar
 
 def load_maze(maze_number: int) -> np.ndarray:
     if not (-1 < maze_number < 50):
@@ -28,7 +29,7 @@ def find_random_start_goal(gridworld: GridWorld):
         if start != goal: 
             return start, goal
 
-def run_experiment(maze_number):
+def run_g_experiment(maze_number):
     maze = load_maze(maze_number)
     grid = GridWorld(maze)
     start, goal = find_random_start_goal(grid)
@@ -58,61 +59,114 @@ def run_experiment(maze_number):
         }
     }
 
+def analyze_g_results(all_results):
+    # Filter successful runs
+    smaller = [r['smaller_g']['expansions']
+               for r in all_results if r['smaller_g']['success']]
+    larger = [r['larger_g']['expansions']
+              for r in all_results if r['larger_g']['success']]
+
+    print("\n==============================")
+    print("PART 2 RESULTS: Tie-breaking Strategies")
+    print("==============================")
+
+    if not smaller or not larger:
+        print("No valid results to analyze.")
+        return
+
+    avg_smaller = np.mean(smaller)
+    avg_larger = np.mean(larger)
+
+    print("\nsmaller_g strategy:")
+    print(f"  Average expansions: {avg_smaller:.2f}")
+    print(f"  Median expansions: {np.median(smaller):.2f}")
+    print(f"  Min expansions: {np.min(smaller)}")
+    print(f"  Max expansions: {np.max(smaller)}")
+
+    print("\nlarger_g strategy:")
+    print(f"  Average expansions: {avg_larger:.2f}")
+    print(f"  Median expansions: {np.median(larger):.2f}")
+    print(f"  Min expansions: {np.min(larger)}")
+    print(f"  Max expansions: {np.max(larger)}")
+
+    diff = avg_larger - avg_smaller
+    print(f"\nAverage difference (larger_g − smaller_g): {diff:.2f}")
+
+    if diff < 0:
+        print("Conclusion: Breaking ties in favor of larger g-values expands fewer cells on average.")
+    else:
+        print("Conclusion: Breaking ties in favor of smaller g-values expands fewer cells on average.")
+
+
+def run_forward_backward_experiment(maze_number):
+    maze = load_maze(maze_number)
+    grid = GridWorld(maze)
+    start, goal = find_random_start_goal(grid)
+
+    results = {}
+
+    # Forward A*
+    forward = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
+    forward.run()
+    results["forward"] = forward.total_expansions
+
+    # Backward A*
+    backward = RepeatedBackwardAStar(grid, start, goal, 'larger_g', False)
+    backward.run()
+    results["backward"] = backward.total_expansions
+
+    return results
+
+def analyze_forward_backward_results(results):
+    forward = [r['forward'] for r in results]
+    backward = [r['backward'] for r in results]
+
+    print("\n==============================")
+    print("PART 3 RESULTS: Forward vs Backward A*")
+    print("==============================")
+
+    if not forward or not backward:
+        print("No valid results to analyze.")
+        return
+
+    avg_forward = np.mean(forward)
+    avg_backward = np.mean(backward)
+
+    print(f"Average Forward A* expansions: {avg_forward:.2f}")
+    print(f"Average Backward A* expansions: {avg_backward:.2f}")
+
+    diff = avg_backward - avg_forward
+    print(f"Average difference (Backward − Forward): {diff:.2f}")
+
+    if diff < 0:
+        print("Conclusion: Backward A* expands fewer nodes on average than Forward A*.")
+    else:
+        print("Conclusion: Forward A* expands fewer nodes on average than Backward A*.")
+
 def main():
     """Run experiments on all 50 mazes."""
     print("CS 440 Assignment 1 - Part 2: The Effects of Ties")    
     # Store results
-    all_results = []
+    g_results = []
+    forward_backward_results = []
     
     # Run experiments on all 50 mazes
-    for maze_num in range(50):
+    for maze_num in range(5):
         try:
-            result = run_experiment(maze_num)
-            all_results.append(result)
-            
-            # Print quick summary
-            print(f"  Maze {maze_num}: smaller_g={result['smaller_g']['expansions']}, "
-                  f"larger_g={result['larger_g']['expansions']}")
+            #g_res = run_g_experiment(maze_num)
+            #g_results.append(g_res)
+
+            forward_backward_res = run_forward_backward_experiment(maze_num)
+            forward_backward_results.append(forward_backward_res)
         except Exception as e:
             print(f"  Maze {maze_num}: ERROR - {e}")
-    
-    print("RESULTS SUMMARY")
-    
-    # Calculate statistics
-    smaller_g_expansions = [r['smaller_g']['expansions'] for r in all_results 
-                            if r['smaller_g']['success']]
-    larger_g_expansions = [r['larger_g']['expansions'] for r in all_results 
-                           if r['larger_g']['success']]
-    
-    if smaller_g_expansions and larger_g_expansions:
-        print(f"\nsmaller_g strategy:")
-        print(f"  Average expansions: {np.mean(smaller_g_expansions):.2f}")
-        print(f"  Median expansions: {np.median(smaller_g_expansions):.2f}")
-        print(f"  Min expansions: {np.min(smaller_g_expansions)}")
-        print(f"  Max expansions: {np.max(smaller_g_expansions)}")
-        
-        print(f"\nlarger_g strategy:")
-        print(f"  Average expansions: {np.mean(larger_g_expansions):.2f}")
-        print(f"  Median expansions: {np.median(larger_g_expansions):.2f}")
-        print(f"  Min expansions: {np.min(larger_g_expansions)}")
-        print(f"  Max expansions: {np.max(larger_g_expansions)}")
-        
-        print(f"\nComparison:")
-        avg_smaller = np.mean(smaller_g_expansions)
-        avg_larger = np.mean(larger_g_expansions)
-        difference = avg_larger - avg_smaller
 
-        print(f"  Difference (larger_g - smaller_g): {difference:.2f}")
-        
-        if difference < 0:
-            print(f"larger_g expanded fewer cells")
-        else:
-            print(f"smaller_g expanded fewer cells")
-
+    #analyze_g_results(g_results)
+    analyze_forward_backward_results(forward_backward_results)
+    
 
 if __name__ == "__main__":
     main()
-
 
 
         
