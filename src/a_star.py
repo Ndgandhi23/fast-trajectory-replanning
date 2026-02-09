@@ -168,9 +168,9 @@ class AdaptiveAStar(RepeatedForwardAStar):
     """
     
     def __init__(self, gridworld: GridWorld, start: Tuple[int, int], 
-                 goal: Tuple[int, int], tie_breaking: str = 'larger_g'):
+                 goal: Tuple[int, int], debug:bool, tie_breaking: str = 'larger_g'):
         # Call parent constructor
-        super().__init__(gridworld, start, goal, tie_breaking)
+        super().__init__(gridworld, start, goal, tie_breaking, debug)
         
         self.h = {}
 
@@ -425,6 +425,7 @@ def main():
         gridworld=gw,
         start=start,
         goal=goal,
+        debug=True,
         tie_breaking="larger_g"
     )
 
