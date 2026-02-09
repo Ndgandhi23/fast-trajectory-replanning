@@ -418,6 +418,24 @@ def main():
     print("Total expansions:", forward_astar.total_expansions)
 
     print("\n-------------------------------")
+    print("RUNNING APDATIVE A*")
+    print("-------------------------------")
+
+    adaptive_astar = AdaptiveAStar(
+        gridworld=gw,
+        start=start,
+        goal=goal,
+        tie_breaking="larger_g",
+        debug=True
+    )
+
+    adaptive_result = adaptive_astar.run()
+
+    print("\nAdaptive A* RESULT:", adaptive_result)
+    print("Total searches:", adaptive_astar.num_searches)
+    print("Total expansions:", adaptive_astar.total_expansions)
+
+    print("\n-------------------------------")
     print("RUNNING REPEATED BACKWARD A*")
     print("-------------------------------")
 
