@@ -425,8 +425,7 @@ def main():
         gridworld=gw,
         start=start,
         goal=goal,
-        tie_breaking="larger_g",
-        debug=True
+        tie_breaking="larger_g"
     )
 
     adaptive_result = adaptive_astar.run()
