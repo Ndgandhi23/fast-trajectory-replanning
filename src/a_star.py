@@ -141,7 +141,7 @@ class AdaptiveAStar(RepeatedForwardAStar):
                 pos = (row, col)
                 self.h[pos] = gridworld.manhattan_distance(pos, goal)
     
-    def _heuristic(self, pos: Tuple[int, int]) -> int:
+    def heuristic(self, pos: Tuple[int, int]) -> int:
         """
         Override parent's heuristic to use learned h-values.
         Falls back to Manhattan distance if not yet computed.
@@ -155,7 +155,7 @@ class AdaptiveAStar(RepeatedForwardAStar):
         open_list = BinaryHeap()
         closed = set()
 
-        priority = self._compute_priority(current, 0)
+        priority = self.compute_priority(current, 0)
         open_list.insert(priority, current)
 
         expanded_cells = []
@@ -197,14 +197,13 @@ class AdaptiveAStar(RepeatedForwardAStar):
                     self.g[neighbor] = new_g
                     self.tree[neighbor] = current_pos
                     
-                    new_priority = self._compute_priority(neighbor, new_g)
+                    new_priority = self.compute_priority(neighbor, new_g)
                     open_list.insert(new_priority, neighbor)
 
         self._update_heuristics(expanded_cells)
     
     def _update_heuristics(self, expanded_cells: List[Tuple[int, int]]):
         goal_g = self.g.get(self.goal, float('inf'))
-        l
         if goal_g == float('inf'):
             return
         
@@ -216,6 +215,7 @@ class AdaptiveAStar(RepeatedForwardAStar):
                     self.h[cell] = new_h
 
             
-            
+
+
 
 

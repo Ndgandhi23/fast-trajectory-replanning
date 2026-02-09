@@ -22,16 +22,16 @@ def find_random_start_goal(gridworld: GridWorld):
         unblocked_positions = np.argwhere(gridworld.grid == 0)
         random_idx = random.randint(0, len(unblocked_positions)-1)
         row_pos, col_pos = unblocked_positions[random_idx]
-        end = (row_pos, col_pos)
+        goal = (row_pos, col_pos)
 
         
-        if start != end: 
-            return start, end
+        if start != goal: 
+            return start, goal
 
 def run_experiment(maze_number):
     maze = load_maze(maze_number)
     grid = GridWorld(maze)
-    start, end = find_random_start_goal(grid)
+    start, goal = find_random_start_goal(grid)
     #step 2
     # Run with smaller_g
     astar1 = RepeatedForwardAStar(grid, start, goal, 'smaller_g')
