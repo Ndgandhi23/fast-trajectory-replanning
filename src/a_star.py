@@ -385,23 +385,20 @@ def main():
     # 0 = free, 1 = blocked
     grid = np.array([
         [0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 0, 1, 0],
-        [0, 1, 0, 0, 0],
-        [0, 0, 0, 0, 0]
+        [0, 0, 1, 0, 0],
+        [0, 0, 1, 1, 0],
+        [0, 0, 1, 1, 0],
+        [0, 0, 0, 1, 0]
     ])
 
     gw = GridWorld(grid)
 
-    start = (0, 0)
+    start = (4, 2)
     goal = (4, 4)
 
-    # ==============================
-    # Repeated Forward A*
-    # ==============================
-    print("\n==============================")
+    print("\n-------------------------------")
     print("RUNNING REPEATED FORWARD A*")
-    print("==============================")
+    print("-------------------------------")
 
     forward_astar = RepeatedForwardAStar(
         gridworld=gw,
@@ -417,12 +414,9 @@ def main():
     print("Total searches:", forward_astar.num_searches)
     print("Total expansions:", forward_astar.total_expansions)
 
-    # ==============================
-    # Repeated Backward A*
-    # ==============================
-    print("\n==============================")
+    print("\n-------------------------------")
     print("RUNNING REPEATED BACKWARD A*")
-    print("==============================")
+    print("-------------------------------")
 
     backward_astar = RepeatedBackwardAStar(
         gridworld=gw,

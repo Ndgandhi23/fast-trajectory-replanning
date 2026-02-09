@@ -66,9 +66,9 @@ def analyze_g_results(all_results):
     larger = [r['larger_g']['expansions']
               for r in all_results if r['larger_g']['success']]
 
-    print("\n==============================")
+    print("\n-------------------------------")
     print("PART 2 RESULTS: Tie-breaking Strategies")
-    print("==============================")
+    print("-------------------------------")
 
     if not smaller or not larger:
         print("No valid results to analyze.")
@@ -121,9 +121,9 @@ def analyze_forward_backward_results(results):
     forward = [r['forward'] for r in results]
     backward = [r['backward'] for r in results]
 
-    print("\n==============================")
+    print("\n-------------------------------")
     print("PART 3 RESULTS: Forward vs Backward A*")
-    print("==============================")
+    print("-------------------------------")
 
     if not forward or not backward:
         print("No valid results to analyze.")
@@ -132,8 +132,18 @@ def analyze_forward_backward_results(results):
     avg_forward = np.mean(forward)
     avg_backward = np.mean(backward)
 
-    print(f"Average Forward A* expansions: {avg_forward:.2f}")
-    print(f"Average Backward A* expansions: {avg_backward:.2f}")
+    print("\nForward A* expansions:")
+    print(f"  Average expansions: {avg_forward:.2f}")
+    print(f"  Median expansions: {np.median(forward):.2f}")
+    print(f"  Min expansions: {np.min(forward)}")
+    print(f"  Max expansions: {np.max(forward)}")
+
+    print("\nBackward A* expansions:")
+    print(f"  Average expansions: {avg_backward:.2f}")
+    print(f"  Median expansions: {np.median(backward):.2f}")
+    print(f"  Min expansions: {np.min(backward)}")
+    print(f"  Max expansions: {np.max(backward)}")
+
 
     diff = avg_backward - avg_forward
     print(f"Average difference (Backward − Forward): {diff:.2f}")
@@ -144,14 +154,13 @@ def analyze_forward_backward_results(results):
         print("Conclusion: Forward A* expands fewer nodes on average than Backward A*.")
 
 def main():
-    """Run experiments on all 50 mazes."""
-    print("CS 440 Assignment 1 - Part 2: The Effects of Ties")    
+    """Run experiments on all 50 mazes."""  
     # Store results
     g_results = []
     forward_backward_results = []
     
     # Run experiments on all 50 mazes
-    for maze_num in range(5):
+    for maze_num in range(50):
         try:
             #g_res = run_g_experiment(maze_num)
             #g_results.append(g_res)
