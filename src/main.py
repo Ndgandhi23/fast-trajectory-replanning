@@ -34,11 +34,11 @@ def run_experiment(maze_number):
     start, goal = find_random_start_goal(grid)
     #step 2
     # Run with smaller_g
-    astar1 = RepeatedForwardAStar(grid, start, goal, 'smaller_g')
+    astar1 = RepeatedForwardAStar(grid, start, goal, 'smaller_g', False)
     success1 = astar1.run()
     
     # Run with larger_g
-    astar2 = RepeatedForwardAStar(grid, start, goal, 'larger_g')
+    astar2 = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
     success2 = astar2.run()
     
     # Return results

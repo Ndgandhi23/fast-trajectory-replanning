@@ -3,12 +3,17 @@ from typing import Tuple, Dict, Set, List
 from GridWorld import GridWorld
 from binary_heap import BinaryHeap
 
+#helper for debugging
+def fmt(pos):
+    return f"({pos[0]},{pos[1]})"
+
 class RepeatedForwardAStar: 
-    def __init__(self, gridworld: GridWorld, start: Tuple[int, int], goal: Tuple[int, int], tie_breaking: str):
+    def __init__(self, gridworld: GridWorld, start: Tuple[int, int], goal: Tuple[int, int], tie_breaking: str, debug:bool):
         self.gridworld = gridworld
         self.start = start
         self.goal = goal 
         self.tie_breaking = tie_breaking
+        self.debug = debug
 
         self.total_expansions = 0
         self.num_searches = 0
@@ -20,7 +25,7 @@ class RepeatedForwardAStar:
         self.g = {}       # Maps position -> g-value
         self.tree = {}    # Maps position -> parent position
 
-        self.C = 10 * GridWorld.rows * GridWorld.cols
+        self.C = 10 * self.gridworld.rows * self.gridworld.cols
     
     #helper 
     def heuristic(self, pos: Tuple[int, int]) -> int:
@@ -61,6 +66,15 @@ class RepeatedForwardAStar:
             
             closed.add(current_pos)
             self.total_expansions += 1
+
+            #DEBUGGING
+            if self.debug:
+                print(
+                    f"EXPAND {fmt(current_pos)} "
+                    f"g={self.g[current_pos]} "
+                    f"h={self.heuristic(current_pos)} "
+                    f"f={self.g[current_pos] + self.heuristic(current_pos)}"
+                )
             
             current_g = self.g[current_pos]
             
@@ -80,6 +94,13 @@ class RepeatedForwardAStar:
                     
                     new_priority = self.compute_priority(neighbor, new_g)
                     open.insert(new_priority, neighbor)
+
+                    #DEBUGGING
+                    if self.debug:
+                        print(
+                            f"  UPDATE {fmt(neighbor)} "
+                            f"g={new_g} parent={fmt(current_pos)}"
+                        )
     
     def run(self):
         current = self.start
@@ -87,6 +108,13 @@ class RepeatedForwardAStar:
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
+
+            #DEBUGGING
+            if self.debug:
+                print("\n==============================")
+                print(f"NEW SEARCH #{self.counter}")
+                print(f"Agent position: {fmt(current)}")
+                print(f"Known blocked cells: {self.known_blocked}")
             
             self.g[current] = 0
             self.g[self.goal] = float('inf')
@@ -108,11 +136,21 @@ class RepeatedForwardAStar:
             path.reverse()
             
             for next_pos in path:
+                #DEBUGGING
+                if self.debug:
+                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
                 for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
                     if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
                         self.known_blocked.add(neighbor)
             
                 if next_pos in self.known_blocked:
+                    #DEBUGGING
+                    if self.debug:
+                        print(f"REPLAN triggered: {fmt(next_pos)} is blocked")
                     break 
                 
                 current = next_pos
@@ -214,7 +252,196 @@ class AdaptiveAStar(RepeatedForwardAStar):
                 if new_h > self.h.get(cell, 0):
                     self.h[cell] = new_h
 
+class RepeatedBackwardAStar(RepeatedForwardAStar): 
+    def heuristic(self, pos: Tuple[int, int]) -> int:
+        return self.gridworld.manhattan_distance(self.goal, pos)
+        
+    def compute_path(self, current: Tuple[int, int]): 
+        open = BinaryHeap()
+        closed = set()
+
+        self.g[self.goal]=0
+        self.search[self.goal]= self.counter
+
+        priority = self.compute_priority(self.goal, 0)
+        open.insert(priority, self.goal)
+
+        while not open.is_empty(): 
+            agent_g = self.g.get(current, float('inf'))
+
+            if open.peek() is None:
+                break
+
+            min_priority, min_pos = open.peek()
+            min_f = self.g[min_pos] + self.heuristic(min_pos)
+
+            if agent_g <= min_f:
+                break
             
+            _, current_pos = open.extract_min()
+            
+            if current_pos in closed:
+                continue
+            
+            closed.add(current_pos)
+            self.total_expansions += 1
+
+            #DEBUGGING
+            if self.debug:
+                print(
+                    f"EXPAND {fmt(current_pos)} "
+                    f"g={self.g[current_pos]} "
+                    f"h={self.heuristic(current_pos)} "
+                    f"f={self.g[current_pos] + self.heuristic(current_pos)}"
+                )
+            
+            current_g = self.g[current_pos]
+            
+            for neighbor in self.gridworld.get_neighbors(current_pos[0], current_pos[1]):
+                if neighbor in self.known_blocked:
+                    continue
+                
+                if self.search.get(neighbor, 0) < self.counter:
+                    self.g[neighbor] = float('inf')
+                    self.search[neighbor] = self.counter
+                
+                new_g = current_g + 1  
+                
+                if new_g < self.g[neighbor]:
+                    self.g[neighbor] = new_g
+                    self.tree[neighbor] = current_pos
+                    
+                    new_priority = self.compute_priority(neighbor, new_g)
+                    open.insert(new_priority, neighbor)
+
+                    #DEBUGGING
+                    if self.debug:
+                        print(
+                            f"  UPDATE {fmt(neighbor)} "
+                            f"g={new_g} parent={fmt(current_pos)}"
+                        )
+
+    
+    def run(self):
+        current = self.start
+        
+        while current != self.goal:
+            self.counter += 1
+            self.num_searches += 1
+            
+            #DEBUGGING
+            if self.debug:
+                print("\n==============================")
+                print(f"NEW SEARCH #{self.counter}")
+                print(f"Agent position: {fmt(current)}")
+                print(f"Known blocked cells: {self.known_blocked}")
+
+            self.g[current] = float('inf')
+            self.g[self.goal] = 0
+            self.search[current] = self.counter
+            self.search[self.goal] = self.counter
+            
+            self.compute_path(current)
+            
+            if self.g[current] == float('inf'):
+                return False 
+            
+            path = []
+            pos = current
+            while pos != self.goal:
+                if pos not in self.tree:
+                    return False 
+                pos = self.tree[pos]
+                path.append(pos)
+            
+            for next_pos in path:
+                #DEBUGGING
+                if self.debug:
+                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
+                for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                        self.known_blocked.add(neighbor)
+            
+                if next_pos in self.known_blocked:
+                    #DEBUGGING
+                    if self.debug:
+                        print(f"REPLAN triggered: {fmt(next_pos)} is blocked")
+                    break 
+                
+                current = next_pos
+            
+                if current == self.goal:
+                    return True
+    
+        return True
+    
+
+#DEBUGGING TESTS
+def main():
+    # 0 = free, 1 = blocked
+    grid = np.array([
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 1, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0]
+    ])
+
+    gw = GridWorld(grid)
+
+    start = (0, 0)
+    goal = (4, 4)
+
+    # ==============================
+    # Repeated Forward A*
+    # ==============================
+    print("\n==============================")
+    print("RUNNING REPEATED FORWARD A*")
+    print("==============================")
+
+    forward_astar = RepeatedForwardAStar(
+        gridworld=gw,
+        start=start,
+        goal=goal,
+        tie_breaking="larger_g",
+        debug=True
+    )
+
+    forward_result = forward_astar.run()
+
+    print("\nFORWARD A* RESULT:", forward_result)
+    print("Total searches:", forward_astar.num_searches)
+    print("Total expansions:", forward_astar.total_expansions)
+
+    # ==============================
+    # Repeated Backward A*
+    # ==============================
+    print("\n==============================")
+    print("RUNNING REPEATED BACKWARD A*")
+    print("==============================")
+
+    backward_astar = RepeatedBackwardAStar(
+        gridworld=gw,
+        start=start,
+        goal=goal,
+        tie_breaking="larger_g",
+        debug=True
+    )
+
+    backward_result = backward_astar.run()
+
+    print("\nBACKWARD A* RESULT:", backward_result)
+    print("Total searches:", backward_astar.num_searches)
+    print("Total expansions:", backward_astar.total_expansions)
+
+
+if __name__ == "__main__":
+    main()
+
 
 
 
