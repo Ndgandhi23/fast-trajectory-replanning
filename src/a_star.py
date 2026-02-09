@@ -192,11 +192,10 @@ class AdaptiveAStar(RepeatedForwardAStar):
 
         open_list = BinaryHeap()
         closed = set()
+        expanded_cells = []
 
         priority = self.compute_priority(current, 0)
         open_list.insert(priority, current)
-
-        expanded_cells = []
 
         while not open_list.is_empty(): 
             goal_g = self.g.get(self.goal, float('inf'))
@@ -205,7 +204,7 @@ class AdaptiveAStar(RepeatedForwardAStar):
                 break
 
             min_priority, min_pos = open_list.peek()
-            min_f = self.g[min_pos] + self._heuristic(min_pos)
+            min_f = self.g[min_pos] + self.heuristic(min_pos)
 
             if goal_g <= min_f:
                 break
@@ -238,7 +237,11 @@ class AdaptiveAStar(RepeatedForwardAStar):
                     new_priority = self.compute_priority(neighbor, new_g)
                     open_list.insert(new_priority, neighbor)
 
-        self._update_heuristics(expanded_cells)
+        #self._update_heuristics(expanded_cells)
+        goal_g = self.g.get(self.goal, float('inf'))
+        if goal_g < float("inf"):
+            for c in expanded_cells:
+                self.h[c] = goal_g - self.g[c]
     
     def _update_heuristics(self, expanded_cells: List[Tuple[int, int]]):
         goal_g = self.g.get(self.goal, float('inf'))
