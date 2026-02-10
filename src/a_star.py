@@ -108,6 +108,15 @@ class RepeatedForwardAStar:
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
+            
+            #Moved to be before compute path so it actually looks at neighbors before it moves
+            for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                        self.known_blocked.add(neighbor)
 
             #DEBUGGING
             if self.debug:
@@ -139,13 +148,6 @@ class RepeatedForwardAStar:
                 #DEBUGGING
                 if self.debug:
                     print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
-                for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
-                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
-                        #DEBUGGING
-                        if self.debug:
-                            if neighbor not in self.known_blocked:
-                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
-                        self.known_blocked.add(neighbor)
             
                 if next_pos in self.known_blocked:
                     #DEBUGGING
@@ -154,6 +156,14 @@ class RepeatedForwardAStar:
                     break 
                 
                 current = next_pos
+
+                for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                        self.known_blocked.add(neighbor)
             
                 if current == self.goal:
                     return True
@@ -331,6 +341,14 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
+
+            for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                        self.known_blocked.add(neighbor)
             
             #DEBUGGING
             if self.debug:
@@ -361,13 +379,6 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                 #DEBUGGING
                 if self.debug:
                     print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
-                for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
-                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
-                        #DEBUGGING
-                        if self.debug:
-                            if neighbor not in self.known_blocked:
-                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
-                        self.known_blocked.add(neighbor)
             
                 if next_pos in self.known_blocked:
                     #DEBUGGING
@@ -376,7 +387,15 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                     break 
                 
                 current = next_pos
-            
+
+                for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                        #DEBUGGING
+                        if self.debug:
+                            if neighbor not in self.known_blocked:
+                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                        self.known_blocked.add(neighbor)
+
                 if current == self.goal:
                     return True
     
