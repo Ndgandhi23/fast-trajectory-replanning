@@ -1,8 +1,11 @@
-import numpy as np 
+import os
+import numpy as np
 import random
+from typing import List, Tuple, Optional, Set
+
 from GridWorld import GridWorld
-from a_star import RepeatedForwardAStar
-from a_star import RepeatedBackwardAStar
+from a_star import RepeatedForwardAStar, RepeatedBackwardAStar, AdaptiveAStar
+from visualization import save_replan_image, get_replan_dir
 
 def load_maze(maze_number: int) -> np.ndarray:
     if not (-1 < maze_number < 50):
@@ -14,12 +17,12 @@ def load_maze(maze_number: int) -> np.ndarray:
 def find_random_start_goal(gridworld: GridWorld):
     #runs until different
     while True: 
-        #Finds start pos
+        #finds start pos
         unblocked_positions = np.argwhere(gridworld.grid == 0)
         random_idx = random.randint(0, len(unblocked_positions)-1)
         row_pos, col_pos = unblocked_positions[random_idx]
         start = (row_pos, col_pos)
-        #Finds end pos
+        #finds end pos
         unblocked_positions = np.argwhere(gridworld.grid == 0)
         random_idx = random.randint(0, len(unblocked_positions)-1)
         row_pos, col_pos = unblocked_positions[random_idx]
@@ -33,16 +36,15 @@ def run_g_experiment(maze_number):
     maze = load_maze(maze_number)
     grid = GridWorld(maze)
     start, goal = find_random_start_goal(grid)
-    #step 2
-    # Run with smaller_g
+    #run with smaller_g
     astar1 = RepeatedForwardAStar(grid, start, goal, 'smaller_g', False)
     success1 = astar1.run()
     
-    # Run with larger_g
+    #run with larger_g
     astar2 = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
     success2 = astar2.run()
     
-    # Return results
+    #return results
     return {
         'maze_number': maze_number,
         'start': start,
@@ -60,7 +62,7 @@ def run_g_experiment(maze_number):
     }
 
 def analyze_g_results(all_results):
-    # Filter successful runs
+    #filter successful runs
     smaller = [r['smaller_g']['expansions']
                for r in all_results if r['smaller_g']['success']]
     larger = [r['larger_g']['expansions']
@@ -105,11 +107,11 @@ def run_forward_backward_experiment(maze_number):
 
     results = {}
 
-    # Forward A*
+    #forward A*
     forward = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
     success1 = forward.run()
 
-    # Backward A*
+    #backward A*
     backward = RepeatedBackwardAStar(grid, start, goal, 'larger_g', False)
     success2 = backward.run()
 
@@ -172,26 +174,83 @@ def analyze_forward_backward_results(results):
     else:
         print("Conclusion: Forward A* expands fewer nodes on average than Backward A*.")
 
+def run_single_maze(maze_number: int, start: Tuple[int, int], goal: Tuple[int, int], algorithm: str, tie_breaking: str, save_replan_images: bool = False,) -> bool:
+    maze = load_maze(maze_number)
+    grid = GridWorld(maze)
+    on_replan = None
+    if save_replan_images:
+        replan_dir = get_replan_dir()
+        replan_num = [0]
+        def on_replan(current: Tuple[int, int], known_blocked: Set[Tuple[int, int]]) -> None:
+            replan_num[0] += 1
+            filepath = os.path.join(replan_dir, f"replan_{replan_num[0]:02d}.png")
+            save_replan_image(maze, start, goal, current, known_blocked, filepath, title=f"Replan {replan_num[0]}")
+    if algorithm == "forward":
+        runner = RepeatedForwardAStar(grid, start, goal, tie_breaking, False, on_replan=on_replan)
+    elif algorithm == "backward":
+        runner = RepeatedBackwardAStar(grid, start, goal, tie_breaking, False, on_replan=on_replan)
+    else:
+        runner = AdaptiveAStar(grid, start, goal, False, tie_breaking, on_replan=on_replan)
+    success = runner.run()
+    print(f"Success: {success}, Searches: {runner.num_searches}, Expansions: {runner.total_expansions}")
+    return success
+
 def main():
-    """Run experiments on all 50 mazes."""  
-    # Store results
-    g_results = []
-    forward_backward_results = []
-    
-    # Run experiments on all 50 mazes
-    for maze_num in range(50):
-        try:
-            #g_res = run_g_experiment(maze_num)
-            #g_results.append(g_res)
+    print("What would you like to do?")
+    print(" 1) Run experiment")
+    print(" 2) Run single maze")
+    choice = input("Choice: ").strip()
 
-            forward_backward_res = run_forward_backward_experiment(maze_num)
-            forward_backward_results.append(forward_backward_res)
-        except Exception as e:
-            print(f"  Maze {maze_num}: ERROR - {e}")
+    if choice == "1":
+        print("Which experiment?")
+        print(" 1) Tie-breaking (smaller_g vs larger_g)")
+        print(" 2) Forward A* vs Backward A*")
+        exp = input("Choice: ").strip()
+        if exp == "1":
+            g_results = []
+            for maze_num in range(50):
+                try:
+                    g_results.append(run_g_experiment(maze_num))
+                except Exception as e:
+                    print(f"Maze {maze_num}: ERROR - {e}")
+            analyze_g_results(g_results)
+        else:
+            forward_backward_results = []
+            for maze_num in range(50):
+                try:
+                    forward_backward_results.append(run_forward_backward_experiment(maze_num))
+                except Exception as e:
+                    print(f"Maze {maze_num}: ERROR - {e}")
+            analyze_forward_backward_results(forward_backward_results)
 
-    #analyze_g_results(g_results)
-    analyze_forward_backward_results(forward_backward_results)
-    
+    elif choice == "2":
+        maze_number = int(input("Maze number (0-49): ").strip())
+        maze = load_maze(maze_number)
+        grid = GridWorld(maze)
+        use_random = input("Random start and goal? (y/n): ").strip().lower()
+        if use_random == "y":
+            start, goal = find_random_start_goal(grid)
+            print(f"Start: {start}, Goal: {goal}")
+        else:
+            r0, c0 = map(int, input("Start row col: ").split())
+            r1, c1 = map(int, input("Goal row col: ").split())
+            start, goal = (r0, c0), (r1, c1)
+        print("Algorithm: 1=forward  2=backward  3=adaptive")
+        algo_choice = input("Choice: ").strip()
+        if algo_choice == "1":
+            algorithm = "forward"
+        elif algo_choice == "2":
+            algorithm = "backward"
+        else:
+            algorithm = "adaptive"
+        print("Tie-breaking: 1=smaller_g  2=larger_g")
+        tie_choice = input("Choice: ").strip()
+        tie_breaking = "smaller_g" if tie_choice == "1" else "larger_g"
+        save_replan = input("Save image at each replan? (y/n): ").strip().lower() == "y"
+        run_single_maze(maze_number, start, goal, algorithm, tie_breaking, save_replan_images=save_replan)
+
+    else:
+        print("Unknown choice.")
 
 if __name__ == "__main__":
     main()

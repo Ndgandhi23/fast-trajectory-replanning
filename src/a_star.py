@@ -8,12 +8,13 @@ def fmt(pos):
     return f"({pos[0]},{pos[1]})"
 
 class RepeatedForwardAStar: 
-    def __init__(self, gridworld: GridWorld, start: Tuple[int, int], goal: Tuple[int, int], tie_breaking: str, debug:bool):
+    def __init__(self, gridworld: GridWorld, start: Tuple[int, int], goal: Tuple[int, int], tie_breaking: str, debug: bool, on_replan=None):
         self.gridworld = gridworld
         self.start = start
         self.goal = goal 
         self.tie_breaking = tie_breaking
         self.debug = debug
+        self.on_replan = on_replan
 
         self.total_expansions = 0
         self.num_searches = 0
@@ -21,9 +22,9 @@ class RepeatedForwardAStar:
         self.known_blocked = set()
 
         self.counter = 0
-        self.search = {}  # Maps position -> search number
-        self.g = {}       # Maps position -> g-value
-        self.tree = {}    # Maps position -> parent position
+        self.search = {}  #maps position -> search number
+        self.g = {}       #maps position -> g-value
+        self.tree = {}    #maps position -> parent position
 
         self.C = 10 * self.gridworld.rows * self.gridworld.cols
     
@@ -105,7 +106,7 @@ class RepeatedForwardAStar:
     def run(self):
         current = self.start
 
-        #Moved to be before compute path so it actually looks at neighbors before it moves
+        #moved to be before compute path so it actually looks at neighbors before it moves
         for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
             if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
                 #DEBUGGING
@@ -117,6 +118,8 @@ class RepeatedForwardAStar:
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
+            if self.on_replan:
+                self.on_replan(current, set(self.known_blocked))
 
             #DEBUGGING
             if self.debug:
@@ -178,9 +181,9 @@ class AdaptiveAStar(RepeatedForwardAStar):
     """
     
     def __init__(self, gridworld: GridWorld, start: Tuple[int, int], 
-                 goal: Tuple[int, int], debug:bool, tie_breaking: str = 'larger_g'):
-        # Call parent constructor
-        super().__init__(gridworld, start, goal, tie_breaking, debug)
+                 goal: Tuple[int, int], debug: bool, tie_breaking: str = 'larger_g', on_replan=None):
+        #call parent constructor
+        super().__init__(gridworld, start, goal, tie_breaking, debug, on_replan)
         
         self.h = {}
 
@@ -349,7 +352,9 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
-            
+            if self.on_replan:
+                self.on_replan(current, set(self.known_blocked))
+
             #DEBUGGING
             if self.debug:
                 print("\n-------------------------------")
@@ -437,7 +442,7 @@ def main():
     print("Total expansions:", forward_astar.total_expansions)
     
     print("\n-------------------------------")
-    print("RUNNING APDATIVE A*")
+    print("RUNNING ADAPTIVE A*")
     print("-------------------------------")
 
     adaptive_astar = AdaptiveAStar(
@@ -457,7 +462,6 @@ def main():
     print("\n-------------------------------")
     print("RUNNING REPEATED BACKWARD A*")
     print("-------------------------------")
-
 
     backward_astar = RepeatedBackwardAStar(
         gridworld=gw,
