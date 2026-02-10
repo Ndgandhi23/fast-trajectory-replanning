@@ -280,12 +280,12 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
         open.insert(priority, self.goal)
 
         while not open.is_empty(): 
-            agent_g = self.g.get(current, float('inf'))
 
             if open.peek() is None:
                 break
 
             min_priority, min_pos = open.peek()
+            agent_g = self.g.get(current, float('inf'))
             min_f = self.g[min_pos] + self.heuristic(min_pos)
 
             if agent_g <= min_f:
@@ -374,7 +374,7 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                     return False 
                 pos = self.tree[pos]
                 path.append(pos)
-            
+
             for next_pos in path:
                 if next_pos in self.known_blocked:
                     #DEBUGGING
@@ -435,7 +435,7 @@ def main():
     print("\nFORWARD A* RESULT:", forward_result)
     print("Total searches:", forward_astar.num_searches)
     print("Total expansions:", forward_astar.total_expansions)
-    '''
+    
     print("\n-------------------------------")
     print("RUNNING APDATIVE A*")
     print("-------------------------------")
@@ -445,7 +445,7 @@ def main():
         start=start,
         goal=goal,
         debug=True,
-        tie_breaking="larger_g"
+        tie_breaking="smaller_g"
     )
 
     adaptive_result = adaptive_astar.run()
@@ -453,8 +453,7 @@ def main():
     print("\nAdaptive A* RESULT:", adaptive_result)
     print("Total searches:", adaptive_astar.num_searches)
     print("Total expansions:", adaptive_astar.total_expansions)
-    '''
-    '''
+    
     print("\n-------------------------------")
     print("RUNNING REPEATED BACKWARD A*")
     print("-------------------------------")
@@ -473,7 +472,7 @@ def main():
     print("\nBACKWARD A* RESULT:", backward_result)
     print("Total searches:", backward_astar.num_searches)
     print("Total expansions:", backward_astar.total_expansions)
-    '''
+  
 
 if __name__ == "__main__":
     main()
