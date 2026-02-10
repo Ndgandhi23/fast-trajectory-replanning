@@ -104,23 +104,23 @@ class RepeatedForwardAStar:
     
     def run(self):
         current = self.start
+
+        #Moved to be before compute path so it actually looks at neighbors before it moves
+        for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+            if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                #DEBUGGING
+                if self.debug:
+                    if neighbor not in self.known_blocked:
+                        print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                self.known_blocked.add(neighbor)
         
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
-            
-            #Moved to be before compute path so it actually looks at neighbors before it moves
-            for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
-                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
-                        #DEBUGGING
-                        if self.debug:
-                            if neighbor not in self.known_blocked:
-                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
-                        self.known_blocked.add(neighbor)
 
             #DEBUGGING
             if self.debug:
-                print("\n==============================")
+                print("\n-------------------------------")
                 print(f"NEW SEARCH #{self.counter}")
                 print(f"Agent position: {fmt(current)}")
                 print(f"Known blocked cells: {self.known_blocked}")
@@ -145,15 +145,15 @@ class RepeatedForwardAStar:
             path.reverse()
             
             for next_pos in path:
-                #DEBUGGING
-                if self.debug:
-                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
-            
                 if next_pos in self.known_blocked:
                     #DEBUGGING
                     if self.debug:
                         print(f"REPLAN triggered: {fmt(next_pos)} is blocked")
                     break 
+
+                #DEBUGGING
+                if self.debug:
+                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
                 
                 current = next_pos
 
@@ -338,21 +338,21 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
     def run(self):
         current = self.start
         
+        for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
+            if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
+                #DEBUGGING
+                if self.debug:
+                    if neighbor not in self.known_blocked:
+                        print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
+                self.known_blocked.add(neighbor)
+
         while current != self.goal:
             self.counter += 1
             self.num_searches += 1
-
-            for neighbor in self.gridworld.get_neighbors(current[0], current[1]):
-                    if self.gridworld.is_blocked(neighbor[0], neighbor[1]):
-                        #DEBUGGING
-                        if self.debug:
-                            if neighbor not in self.known_blocked:
-                                print(f"OBSERVE BLOCKED at {fmt(neighbor)}")
-                        self.known_blocked.add(neighbor)
             
             #DEBUGGING
             if self.debug:
-                print("\n==============================")
+                print("\n-------------------------------")
                 print(f"NEW SEARCH #{self.counter}")
                 print(f"Agent position: {fmt(current)}")
                 print(f"Known blocked cells: {self.known_blocked}")
@@ -376,15 +376,15 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                 path.append(pos)
             
             for next_pos in path:
-                #DEBUGGING
-                if self.debug:
-                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
-            
                 if next_pos in self.known_blocked:
                     #DEBUGGING
                     if self.debug:
                         print(f"REPLAN triggered: {fmt(next_pos)} is blocked")
                     break 
+
+                #DEBUGGING
+                if self.debug:
+                    print(f"MOVE {fmt(current)} -> {fmt(next_pos)}")
                 
                 current = next_pos
 
@@ -417,7 +417,7 @@ def main():
 
     start = (4, 2)
     goal = (4, 4)
-
+     
     print("\n-------------------------------")
     print("RUNNING REPEATED FORWARD A*")
     print("-------------------------------")
@@ -426,7 +426,7 @@ def main():
         gridworld=gw,
         start=start,
         goal=goal,
-        tie_breaking="larger_g",
+        tie_breaking="smaller_g",
         debug=True
     )
 
@@ -435,7 +435,7 @@ def main():
     print("\nFORWARD A* RESULT:", forward_result)
     print("Total searches:", forward_astar.num_searches)
     print("Total expansions:", forward_astar.total_expansions)
-
+    '''
     print("\n-------------------------------")
     print("RUNNING APDATIVE A*")
     print("-------------------------------")
@@ -453,16 +453,18 @@ def main():
     print("\nAdaptive A* RESULT:", adaptive_result)
     print("Total searches:", adaptive_astar.num_searches)
     print("Total expansions:", adaptive_astar.total_expansions)
-
+    '''
+    '''
     print("\n-------------------------------")
     print("RUNNING REPEATED BACKWARD A*")
     print("-------------------------------")
+
 
     backward_astar = RepeatedBackwardAStar(
         gridworld=gw,
         start=start,
         goal=goal,
-        tie_breaking="larger_g",
+        tie_breaking="smaller_g",
         debug=True
     )
 
@@ -471,7 +473,7 @@ def main():
     print("\nBACKWARD A* RESULT:", backward_result)
     print("Total searches:", backward_astar.num_searches)
     print("Total expansions:", backward_astar.total_expansions)
-
+    '''
 
 if __name__ == "__main__":
     main()

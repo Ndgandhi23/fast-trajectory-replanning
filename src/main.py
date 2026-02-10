@@ -107,19 +107,35 @@ def run_forward_backward_experiment(maze_number):
 
     # Forward A*
     forward = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
-    forward.run()
-    results["forward"] = forward.total_expansions
+    success1 = forward.run()
 
     # Backward A*
     backward = RepeatedBackwardAStar(grid, start, goal, 'larger_g', False)
-    backward.run()
-    results["backward"] = backward.total_expansions
+    success2 = backward.run()
 
-    return results
+    return {
+        'forward': {
+            'success': success1,
+            'expansions': forward.total_expansions,
+            'searches': forward.num_searches
+        },
+        'backward': {
+            'success': success2,
+            'expansions': backward.total_expansions,
+            'searches': backward.num_searches
+        }
+    }
 
 def analyze_forward_backward_results(results):
-    forward = [r['forward'] for r in results]
-    backward = [r['backward'] for r in results]
+    forward = [r['forward']['expansions'] 
+               for r in results if r['forward']['success']]
+    backward = [r['backward']['expansions'] 
+                for r in results if r['backward']['success']]
+
+    forward_search = [r['forward']['searches'] 
+                      for r in results if r['forward']['success']]
+    backward_search = [r['backward']['searches'] 
+                       for r in results if r['backward']['success']]
 
     print("\n-------------------------------")
     print("PART 3 RESULTS: Forward vs Backward A*")
@@ -137,16 +153,19 @@ def analyze_forward_backward_results(results):
     print(f"  Median expansions: {np.median(forward):.2f}")
     print(f"  Min expansions: {np.min(forward)}")
     print(f"  Max expansions: {np.max(forward)}")
+    print(f"  Average searches: {np.mean(forward_search)}")
 
     print("\nBackward A* expansions:")
     print(f"  Average expansions: {avg_backward:.2f}")
     print(f"  Median expansions: {np.median(backward):.2f}")
     print(f"  Min expansions: {np.min(backward)}")
     print(f"  Max expansions: {np.max(backward)}")
-
+    print(f"  Average searches: {np.mean(backward_search)}")
 
     diff = avg_backward - avg_forward
     print(f"Average difference (Backward − Forward): {diff:.2f}")
+
+
 
     if diff < 0:
         print("Conclusion: Backward A* expands fewer nodes on average than Forward A*.")
