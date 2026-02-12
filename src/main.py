@@ -128,6 +128,34 @@ def run_forward_backward_experiment(maze_number):
         }
     }
 
+def run_forward_adaptive_experiment(maze_number):
+    maze = load_maze(maze_number)
+    grid = GridWorld(maze)
+    start, goal = find_random_start_goal(grid)
+
+    results = {}
+
+    #forward A*
+    forward = RepeatedForwardAStar(grid, start, goal, 'larger_g', False)
+    success1 = forward.run()
+
+    #adaptive A*
+    adaptive = AdaptiveAStar(grid, start, goal, False, 'larger_g')
+    success2 = adaptive.run()
+
+    return {
+        'forward': {
+            'success': success1,
+            'expansions': forward.total_expansions,
+            'searches': forward.num_searches
+        },
+        'adaptive': {
+            'success': success2,
+            'expansions': adaptive.total_expansions,
+            'searches': adaptive.num_searches
+        }
+    }
+
 def analyze_forward_backward_results(results):
     forward = [r['forward']['expansions'] 
                for r in results if r['forward']['success']]
@@ -174,6 +202,52 @@ def analyze_forward_backward_results(results):
     else:
         print("Conclusion: Forward A* expands fewer nodes on average than Backward A*.")
 
+def analyze_forward_adaptive_results(results):
+    forward = [r['forward']['expansions'] 
+               for r in results if r['forward']['success']]
+    adaptive = [r['adaptive']['expansions'] 
+                for r in results if r['adaptive']['success']]
+
+    forward_search = [r['forward']['searches'] 
+                      for r in results if r['forward']['success']]
+    adaptive_search = [r['adaptive']['searches'] 
+                       for r in results if r['adaptive']['success']]
+
+    print("\n-------------------------------")
+    print("PART 3 RESULTS: Forward vs adaptive A*")
+    print("-------------------------------")
+
+    if not forward or not adaptive:
+        print("No valid results to analyze.")
+        return
+
+    avg_forward = np.mean(forward)
+    avg_adaptive = np.mean(adaptive)
+
+    print("\nForward A* expansions:")
+    print(f"  Average expansions: {avg_forward:.2f}")
+    print(f"  Median expansions: {np.median(forward):.2f}")
+    print(f"  Min expansions: {np.min(forward)}")
+    print(f"  Max expansions: {np.max(forward)}")
+    print(f"  Average searches: {np.mean(forward_search)}")
+
+    print("\nAdaptive A* expansions:")
+    print(f"  Average expansions: {avg_adaptive:.2f}")
+    print(f"  Median expansions: {np.median(adaptive):.2f}")
+    print(f"  Min expansions: {np.min(adaptive)}")
+    print(f"  Max expansions: {np.max(adaptive)}")
+    print(f"  Average searches: {np.mean(adaptive_search)}")
+
+    diff = avg_adaptive - avg_forward
+    print(f"Average difference (Adpative − forward): {diff:.2f}")
+
+
+
+    if diff < 0:
+        print("Conclusion: Adaptive A* expands fewer nodes on average than Forward A*.")
+    else:
+        print("Conclusion: Forward A* expands fewer nodes on average than Adaptive A*.")
+
 def run_single_maze(maze_number: int, start: Tuple[int, int], goal: Tuple[int, int], algorithm: str, tie_breaking: str, save_replan_images: bool = False,) -> bool:
     maze = load_maze(maze_number)
     grid = GridWorld(maze)
@@ -205,6 +279,7 @@ def main():
         print("Which experiment?")
         print(" 1) Tie-breaking (smaller_g vs larger_g)")
         print(" 2) Forward A* vs Backward A*")
+        print(" 3) Forward A* vs Adaptive A*")
         exp = input("Choice: ").strip()
         if exp == "1":
             g_results = []
@@ -214,7 +289,7 @@ def main():
                 except Exception as e:
                     print(f"Maze {maze_num}: ERROR - {e}")
             analyze_g_results(g_results)
-        else:
+        elif exp == "2":
             forward_backward_results = []
             for maze_num in range(50):
                 try:
@@ -222,6 +297,14 @@ def main():
                 except Exception as e:
                     print(f"Maze {maze_num}: ERROR - {e}")
             analyze_forward_backward_results(forward_backward_results)
+        else:
+            forward_adaptive_results = []
+            for maze_num in range(50):
+                try:
+                    forward_adaptive_results.append(run_forward_adaptive_experiment(maze_num))
+                except Exception as e:
+                    print(f"Maze {maze_num}: ERROR - {e}")
+            analyze_forward_adaptive_results(forward_adaptive_results)
 
     elif choice == "2":
         maze_number = int(input("Maze number (0-49): ").strip())
