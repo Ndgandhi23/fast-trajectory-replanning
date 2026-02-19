@@ -274,10 +274,6 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
         
     def compute_path(self, current: Tuple[int, int]): 
         open = BinaryHeap()
-        closed = set()
-
-        self.g[self.goal]=0
-        self.search[self.goal]= self.counter
 
         priority = self.compute_priority(self.goal, 0)
         open.insert(priority, self.goal)
@@ -288,18 +284,13 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                 break
 
             min_priority, min_pos = open.peek()
-            agent_g = self.g.get(current, float('inf'))
-            min_f = self.g[min_pos] + self.heuristic(min_pos)
-
-            if agent_g <= min_f:
+            if self.g[current] <= min_priority:
                 break
             
-            _, current_pos = open.extract_min()
-            
-            if current_pos in closed:
+            priority, current_pos = open.extract_min()
+            if priority != self.compute_priority(current_pos, self.g[current_pos]):
                 continue
             
-            closed.add(current_pos)
             self.total_expansions += 1
 
             #DEBUGGING

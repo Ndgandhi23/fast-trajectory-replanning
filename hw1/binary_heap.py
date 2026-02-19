@@ -1,7 +1,7 @@
 # binary_heap.py
 from typing import Tuple
 
-class BinaryHeap:
+class CustomPQ_maxG:
     def __init__(self):
         self.heap = []  # List of (priority, position) tuples
         self.position_map = {}  # Maps position -> index in heap (for O(1) lookup)
