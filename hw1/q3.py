@@ -32,7 +32,7 @@ from tqdm import tqdm
 import time
 import pygame
 from constants import ROWS, START_NODE, END_NODE, BLACK, WHITE, GREY, YELLOW, BLUE, PATH, NODE_LENGTH, GRID_LENGTH, WINDOW_W, WINDOW_H, GAP
-from custom_pq import CustomPQ_maxG, CustomPQ_minG
+from custom_pq import CustomPQ_maxG
 from q2 import repeated_forward_astar
 
 
@@ -64,7 +64,120 @@ def repeated_backward_astar(
     
     # TODO: Implement Backward A* with max_g tie-braking strategy.
     # Use heapq for standard priority queue implementation and name your max_g heap class as `CustomPQ_maxG` and use it. 
-    pass
+
+    rows = len(actual_maze)
+    cols = len(actual_maze[0])
+    
+    def get_neighbors(r: int, c: int) -> List[Tuple[int, int]]:
+        neighbors = []
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < rows and 0 <= nc < cols:
+                neighbors.append((nr, nc))
+        return neighbors
+
+    def manhattan_distance(p1: Tuple[int, int], p2: Tuple[int, int]) -> int:
+        return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+    def compute_priority(g_val: int, h_val: int) -> int:
+        f_val = g_val + h_val
+
+        # For larger g: 
+        C = 10 * rows * cols
+        return C * f_val - g_val
+        
+    # Tracking variables
+    current = start
+    agent_path = [start]
+    known_blocked = set()
+    
+    g = {}
+    search = {}
+    tree = {}
+    
+    counter = 0
+    total_expansions = 0
+    num_searches = 0
+
+    while current != goal:
+        counter += 1
+        num_searches += 1
+
+        g[goal] = 0
+        search[goal] = counter
+        g[current] = float('inf')
+        search[current] = counter
+
+        open_list = CustomPQ_maxG()
+        
+        h_start = manhattan_distance(goal, current)
+        open_list.insert(compute_priority(0, h_start), goal)
+
+        # Compute Path
+        while not open_list.is_empty():
+            min_priority, min_pos = open_list.peek()
+            
+            target_g = g.get(current, float('inf'))
+            if target_g <= min_priority:
+                if target_g != float('inf'):
+                    break
+                
+            _, current_pos = open_list.extract_min()
+            total_expansions += 1
+            
+            if visualize_callbacks and 'visited' in visualize_callbacks:
+                visualize_callbacks['visited'](current_pos)
+
+            r, c = current_pos
+            for neighbor in get_neighbors(r, c):
+                if neighbor in known_blocked:
+                    continue
+                
+                if search.get(neighbor, 0) < counter:
+                    g[neighbor] = float('inf')
+                    search[neighbor] = counter
+                
+                new_g = g[current_pos] + 1
+                
+                if new_g < g[neighbor]:
+                    g[neighbor] = new_g
+                    tree[neighbor] = current_pos 
+                    
+                    h_val = manhattan_distance(neighbor, current)
+                    priority = compute_priority(new_g, h_val)
+                    open_list.insert(priority, neighbor)
+
+        # Break if no path found
+        if g.get(current, float('inf')) == float('inf'):
+            return False, agent_path, total_expansions, num_searches
+
+        # Get path
+        path = []
+        temp_pos = current
+        while temp_pos != goal:
+            temp_pos = tree[temp_pos]
+            path.append(temp_pos)
+
+        for next_step in path:
+            # Check for blockage before moving
+            nr, nc = next_step
+            if actual_maze[nr][nc] == 1:
+                known_blocked.add(next_step)
+                break # Replan
+            
+            # Move agent
+            current = next_step
+            agent_path.append(current)
+            
+            # Check neighbors
+            for neighbor in get_neighbors(current[0], current[1]):
+                if actual_maze[neighbor[0]][neighbor[1]] == 1:
+                    known_blocked.add(neighbor)
+            
+            if current == goal:
+                return True, agent_path, total_expansions, num_searches
+
+    return True, agent_path, total_expansions, num_searches
 
 def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: str, fps: int = 240, step_delay_ms: int = 0, save_path: Optional[str] = None) -> None:
     # [BONUS] TODO: Place your visualization code here.
@@ -99,6 +212,7 @@ def main() -> None:
 
     mazes = readMazes(args.maze_file)
     results: List[Dict] = []
+    total_bwd_expansions = 0
 
     for maze_id in tqdm(range(len(mazes)), desc="Processing mazes"):
         entry: Dict = {"maze_id": maze_id}
@@ -118,7 +232,9 @@ def main() -> None:
             "replans": replans,
             "runtime_ms": (t1 - t0) * 1000,
         }
+        total_bwd_expansions += expanded
 
+        '''
         t0 = time.perf_counter()
         found, executed, expanded, replans = repeated_forward_astar(
             actual_maze=mazes[maze_id],
@@ -135,8 +251,13 @@ def main() -> None:
             "replans": replans,
             "runtime_ms": (t1 - t0) * 1000,
         }
-
+        '''
         results.append(entry)
+
+    if len(mazes) > 0:
+        avg_bwd_expansions = total_bwd_expansions / len(mazes)
+        print(f"\nResults for {len(mazes)} mazes:")
+        print(f"Average Cell Expansions (Backward): {avg_bwd_expansions:.2f}")
 
     if args.show_vis:
         # In case, PyGame is used for visualization, this code initializes a window and runs the visualization for the selected maze and algorithm.

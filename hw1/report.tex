@@ -1,0 +1,103 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,
+            bindingoffset=0.2in,
+            left=1in,
+            right=1in,
+            top=1in,
+            bottom=1in,
+            footskip=.25in]{geometry}
+\usepackage{graphicx} % Required for inserting images
+
+\usepackage{blindtext}
+
+\title{Fast Trajectory Replanning}
+\author{Sandy Yang, Neil Gandhi, Dev Patel}
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Part 1}
+a) 
+
+The reason the agent chooses to go east instead of north is because the initial state is uninformed. It assumes that all unknown cells are unblocked so all paths have an equal weight. It will explore the search space systematically, expanding each node until it is blocked and backtracks or reaches it's goal. East and north have the same cost and appear as equally optimal choices, so east is chosen based on the expansion order.\\
+\\b)
+
+Assume a finite gridworld where the agent assumes all unknown spaces are unblocked and keeps track of blocked cells when discovering them. The agent can perform two actions: move to an adjacent unblocked cell or discover a blocked cell then trigger a replan.
+
+Since the number of blocked cells an agent discovers is strictly increasing over time, the agent can never attempt to move to a blocked cell more than once. Since the grid is finite, this number of attempts is also finite. So in a finite gridworld the agent either finds its target or discovers that the path is impossible.\\
+\\Let U = num of unblocked cells\\
+\\The agent will follow a path consisting of only unblocked cells. In a finite grid this path can contain at most U steps.\\
+\\The agent can also replan when discovering new blocked cells, and at most there can only be U blocked cells discovered.\\
+\\Therefore, at most, the total number of possible moves is $U * U = U^2$.
+
+
+\section{Part 2}
+We ran repeated forward A* with both tie breaking rules on over 50 randomly generated gridworlds and found on average that breaking ties with the larger $g$-value was more efficient. Using the larger g value as the tie breaker resulted in an average of $2117$ expansions with a median of $1323$. Using smaller-g the mean was $25578$ expansions with a median of $6437$. We observed that these differences would occur because breaking ties based on larger g-values would place higher emphasis on nodes deeper in the tree which is closer to the goal. This would allow the search to be more focused on reaching the goal. Using smaller g values to break ties would expand many unnecessary nodes due to it favoring nodes closer to the start. Smaller g value tie breaking would also expand nodes outward from the start, whereas larger g value tie breaking focused on a tight path to the goal. Both strategies guarantee optimal paths using larger g value tie breaking guarantees a faster runtime according to our findings.
+\section{Part 3}
+From our experiment over 50 randomly generated gridworlds, we found that on average, Repeated Forward A* expanded significantly fewer nodes than Repeated Backward A*. The average expansions for Repeated Forward A* resulted in ~1,800 cell expansions, whereas Repeated Backward A* had an average of ~100,000 cell expansions. This behavior is mainly due to the fact that for Forward A*, our heuristic is based on the distance to a fixed position, the goal state. This gives it a consistent heuristic and it narrows the search region, allowing the nodes closer to the goal to expand first. This also means that when it encounters a blockage, it is usually near the agent, allowing it reuse some of heuristic as it is likely a small detour. However, for Repeated Backward A*, the heuristic is based on the goal state to the current position of the agent, whose position changes after each movement. This means that the heuristic target is changing with each re-planning and usually requires larger expansions. In addition, obstacles near the agent are discovered later in the backward search, which also wastes expansions. These factors causes Repeated Backward A* to have a greater runtime. 
+
+
+\section{Part 4}
+The Manhattan distance is defined as, $h(s) = |x_s - x_{goal}| + |y_s - y_{goal}|$\\
+When the agent is at the goal state, the position $(x,y)$ is noted as $(x_{goal}, y_{goal})$\\
+
+So, $h(s) = |x - x_{goal}| + |y - y_{goal}| =|x_{goal} - x_{goal}| + |y_{goal} - y_{goal}| = 0$\\
+
+Each movement to an adjacent cell has a cost of 1. Let s be the current state $(x_s, y_s)$ and s' be the next state.
+\begin{itemize}
+    \item Movement to the East where $s' = (x_s + 1, y_s)$
+    \begin{itemize}
+        \item $x_{s'} - x_s = ||x + 1 - x_{goal}| - |x - x_{goal}|| \leq 1$
+        \item Since $y' = y$, $|y' - y_{goal}| = |y-y_{goal}|$
+        \item So, $|h(s') - h(s)|=||x + 1 - x_{goal}| - |x - x_{goal}|| \leq 1$
+    \end{itemize}
+    \item Movement to the North where $s' = (x_s, y_s + 1)$
+    \begin{itemize}
+        \item $y_{s'} - y_s = ||y + 1 - y_{goal}| - |y - y_{goal}|| \leq 1$
+        \item Since $x' = x$, $|x' - x_{goal}| = |x-x_{goal}|$
+        \item So, $|h(s') - h(s)|=||y + 1 - y_{goal}| - |y - y_{goal}|| \leq 1$
+    \end{itemize}
+    \item Movement to the West where $s' = (x_s - 1, y_s)$
+    \begin{itemize}
+        \item $x_{s'} - x_s = ||x - 1 - x_{goal}| - |x - x_{goal}|| \leq 1$
+        \item Since $y' = y$, $|y' - y_{goal}| = |y-y_{goal}|$
+        \item So, $|h(s') - h(s)|=||x - 1 - x_{goal}| - |x - x_{goal}|| \leq 1$
+    \end{itemize}
+    \item Movement to the South where $s' = (x_s, y_s - 1)$
+    \begin{itemize}
+        \item $y_{s'} - y_s = ||y - 1 - y_{goal}| - |y - y_{goal}|| \leq 1$
+        \item Since $x' = x$, $|x' - x_{goal}| = |x-x_{goal}|$
+        \item So, $|h(s') - h(s)|=||y - 1 - y_{goal}| - |y - y_{goal}|| \leq 1$
+    \end{itemize}
+\end{itemize}
+
+\noindent In all 4 cardinal directions $|h(s') - h(s)| \leq 1$, therefore $h(s) \leq h(s') + 1$. So the Manhattan distances are consistent for all 4 cardinal directions.\\
+\\
+Let $h_{new}(s) = g(target) - g(s)$ where $g(target)$ is the cost of the shortest path from the start to the goal and $g(s)$ is the cost of the shortest path from the start to the current state.\\
+Assume the initial heuristic is consistent\\
+\\
+Claim: Adaptive A* leaves h-values consistent despite increases in action cost.\\
+Let $s'$ be the next state from s with a cost of 1\\
+Since A* expands states with non-decreasing $f$-values, we can let $g(s') = g(s) + 1$.\\
+So our heuristic update looks like this\\ $h_{new}(s) = g(target) - g(s) \rightarrow  h_{new}(s') = g(target) - g(s')$\\If we substitute our cost we get this, $h_{new}(s') = g(target) - (g(s) + 1)$\\
+Simplifying we get, $h_{new}(s') = h_{new}(s) - 1$, so $h_{new}(s) = 1 + h_{new}(s')$\\
+Therefore, $h_{new}(s) \leq 1 + h_{new}(s')$\\
+When the agent expands the goal we can see that, $h_{new}(goal) = g(goal) - g(goal) = 0$ according to how we update out heuristic.\\
+\\
+This satisfies the consistency conditions, therefore Adaptive A* keeps consistent $h$-values even if the action costs increase
+
+\section{Part 5}
+We ran our implementation of Repeated Forward A* and Adaptive A* on 50 randomly generated gridworlds and found that on average Adaptive A* expanded fewer cells than Repeated Forward A*. Repeated Forward A* had an average expansion count of 1597 with a median of 1177. Adaptive A* had an average expansion count of 1557 and a median of 1131. We observed a clear performance increase for Adaptive A* due to the updated heuristic which makes the agent more informed going into subsequent re-plans. This improvement decreases the number of unnecessary expansions that Adaptive A* performs in later searches. This means that Adaptive A* does not need to re-explore as large of a region. Repeated forward A* relies on the same heuristic which may re-visit nodes across many searches. Both algorithms find the optimal path however Adaptive A* does so in fewer expansions.
+\section{Part 6}
+We can perform a paired t-test to determine whether the performance difference between Repeated Forward A* and Repeated Backward A* is systematic. We know that the resulting measurements are paired because both algorithm are evaluated on the same set of 50 gridworlds with identical start and goal states, using the same larger-g criteria for tie-breaking. \\
+\\
+For each gridworld, we will calculate the mean number of expansions for Forward A* and Backward A*. Let $\mu_F$ represent the mean expansions for Forward A* and $\mu_B$ represent the mean expansions for Backward A*. The null hypothesis would state that the difference of these means is 0, indicating that there was no systematic performance difference. The alternative hypothesis would state that if the difference of the means is not equal to 0, indicating there is a systematic performance difference (either Forward A* or Backward A* is more efficient).\\
+\\
+$H_0:\mu_F-\mu_B=0$\\
+$H_a:\mu_F-\mu_B\not=0$\\
+\\
+After we gather the data of all the means and determine the standard deviation, we can calculate the t-statistic, which shows how large the observed average difference is relative to the variability of differences across mazes and the number of test cases. A larger t-statistic means that the observed difference is large and consistent, indicating that it is systematic. Using the t-distribution, we can calculate the p-value. A smaller p-value means that the difference is less likely due to noise. If the p-value falls below our $\alpha$ value, we can reject the null hypothesis. This will indicate if the observed performance difference between Forward and Backward A* is due to a systematic difference or sampling noise. 
+
+\end{document}

@@ -34,7 +34,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from tqdm import tqdm
 import pygame
 from constants import ROWS, START_NODE, END_NODE, BLACK, WHITE, GREY, YELLOW, BLUE, PATH, NODE_LENGTH, GRID_LENGTH, WINDOW_W, WINDOW_H, GAP
-from custom_pq import CustomPQ_maxG, CustomPQ_minG
+from custom_pq import CustomPQ_maxG
 
 def readMazes(fname: str) -> List[List[List[int]]]:
     """

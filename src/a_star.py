@@ -146,6 +146,7 @@ class RepeatedForwardAStar:
                     return False 
                 pos = self.tree[pos]
             path.reverse()
+            #print(f"Forward count {self.counter} - path length: {len(path)} ")
             
             for next_pos in path:
                 if next_pos in self.known_blocked:
@@ -270,7 +271,7 @@ class AdaptiveAStar(RepeatedForwardAStar):
 
 class RepeatedBackwardAStar(RepeatedForwardAStar): 
     def heuristic(self, pos: Tuple[int, int]) -> int:
-        return self.gridworld.manhattan_distance(self.goal, pos)
+        return self.gridworld.manhattan_distance(self.start, pos)
         
     def compute_path(self, current: Tuple[int, int]): 
         open = BinaryHeap()
@@ -370,6 +371,8 @@ class RepeatedBackwardAStar(RepeatedForwardAStar):
                     return False 
                 pos = self.tree[pos]
                 path.append(pos)
+
+            #print(f"Backward count {self.counter} - path length: {len(path)} ")
 
             for next_pos in path:
                 if next_pos in self.known_blocked:

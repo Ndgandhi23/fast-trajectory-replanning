@@ -283,7 +283,7 @@ def main():
         exp = input("Choice: ").strip()
         if exp == "1":
             g_results = []
-            for maze_num in range(50):
+            for maze_num in range(1):
                 try:
                     g_results.append(run_g_experiment(maze_num))
                 except Exception as e:
@@ -291,7 +291,7 @@ def main():
             analyze_g_results(g_results)
         elif exp == "2":
             forward_backward_results = []
-            for maze_num in range(50):
+            for maze_num in range(10):
                 try:
                     forward_backward_results.append(run_forward_backward_experiment(maze_num))
                 except Exception as e:
